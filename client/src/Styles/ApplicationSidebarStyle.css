@@ -1,0 +1,41 @@
+.ApplicationSidebar_Eventos_TusEventos_Area {
+    display: flex;
+    flex-direction: row;
+    justify-content: left;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ApplicationSidebar_Eventos_TusEventos_Texto {
+    font-family: 'Roboto', sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.Solicitud_Amistad {
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+
+.ApplicationSidebar_Eventos_TusEventos_Card {
+    margin-top: 10px;
+}
+
+.ApplicationSidebar_Solicitudes_Botones {
+    display: flex;
+    flex-direction: column;
+}
+
+.ApplicationSidebar_Eventos_TusEventos_Card_Badge {
+    height: 30px;
+    width: 130px;
+
+    display: flex;
+    flex-direction: row;
+    align-items: space-between;
+    justify-content: space-between;
+}
+
+.eventos_badge_icon {}
