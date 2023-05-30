@@ -3,10 +3,13 @@ import React, { useState, useEffect } from 'react';
 import AmigoAppComponent from './AsideComponents/Amigo';
 import SolicitudAppComponent from './AsideComponents/Solicitud';
 import SolicitudExtendidaAppComponent from './AsideComponents/SolicitudExpandida';
+import NuevaSolicitudComponent from "./AsideComponents/NuevaSolicitud"
 
 import { useDisclosure } from '@mantine/hooks';
 import { ScrollArea } from '@mantine/core';
 import { Modal } from '@mantine/core';
+
+import { Text } from '@mantine/core';
 
 export default function AsideAppComponent({ correoElectronico }) {
     const [usuario, setUsuario] = useState(null);
@@ -14,6 +17,8 @@ export default function AsideAppComponent({ correoElectronico }) {
     const [solicitudes, setSolicitudes] = useState(null);
 
     const [solicitudesModal, solicitudesModalControls] = useDisclosure(false);
+
+    const [nuevaSolicitudModal, nuevaSolicitudModalConstrols] = useDisclosure(false);
 
     useEffect(() => {
         const fetchUsuario = async () => {
@@ -113,15 +118,18 @@ export default function AsideAppComponent({ correoElectronico }) {
         <aside className="fb-section info">
             <div className="fixed-panel info-wrapper">
                 <section className="info__toolbar">
-                    <a className="toolbar-button">
-                        <i className="fa fa-plus"></i>
-                    </a>
-                    <a className="toolbar-button">
-                        <i className="fab fa-facebook-messenger"></i>
-                    </a>
-                    <a className="toolbar-button toolbar-button--notification">
-                        <i className="fa fa-bell"></i>
-                    </a>
+                    <div>
+                        {usuario && (
+                            <Text style={{ marginRight: "10px" }}
+                                c="blue">{usuario.nombre +
+                                    ' ' +
+                                    usuario.apellido}</Text>
+                        )}
+                        {usuario && (
+                            <Text style={{ marginRight: "10px" }}
+                                c="dimmed">{usuario.correo_electronico}</Text>
+                        )}
+                    </div>
                     {usuario && (
                         <img
                             className="profile-image"
@@ -151,7 +159,8 @@ export default function AsideAppComponent({ correoElectronico }) {
                     <div className="info__stories__bubbles__wrapper">
                         <div className="info__stories__bubbles">
                             <div className="bubble bubble--new-history">
-                                <i className="fa fa-plus"></i>
+                                <i className="fa fa-plus" onClick={nuevaSolicitudModalConstrols.open}>
+                                </i>
                             </div>
                             {solicitudes &&
                                 solicitudes.map((solicitud) => (
@@ -191,6 +200,21 @@ export default function AsideAppComponent({ correoElectronico }) {
                         <p>Cargando solicitudes de amistad...</p>
                     )}
                 </section>
+
+                <Modal
+                    opened={nuevaSolicitudModal}
+                    onClose={nuevaSolicitudModalConstrols.close}
+                    withCloseButton={false}
+                    centered
+                    size="55%"
+                    overlayProps={{
+                        opacity: 0.55,
+                        blur: 3,
+                    }}
+                    transitionProps={{ transition: 'fade', duration: 600, timingFunction: 'linear' }}
+                >
+                    <NuevaSolicitudComponent correo_usuario={correoElectronico} />
+                </Modal>
 
                 <section className="info__contacts">
                     <div className="info__contacts__title">

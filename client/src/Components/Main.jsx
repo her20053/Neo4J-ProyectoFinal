@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { TextInput } from '@mantine/core';
-
+import { Text, Paper } from '@mantine/core';
 import { IconSend, IconMessageCircle, IconHeart } from '@tabler/icons-react';
 
 import { Button } from '@mantine/core';
@@ -195,6 +195,7 @@ export default function MainAppComponent({ correoElectronico }) {
                     />
                 )}
 
+
                 {usuario && (
                     <div className="feed__post-creation__form profile-image">
                         <span className="feed__post-creation__form__placeholder" >
@@ -207,6 +208,24 @@ export default function MainAppComponent({ correoElectronico }) {
                     </div>
                 )}
             </div>
+
+            {usuario && (
+                <Paper shadow="xs" p="md" style={{ marginBottom: "30px" }}>
+                    <Text>Un poco acerca de mí</Text>
+                    <Text c="dimmed">{usuario.biografía}</Text>
+                    <Text>Mi fecha de nacimiento es</Text>
+                    <Text c="dimmed">{usuario.fecha_nacimiento}</Text>
+                    <Text c="blue">Habilidades: {usuario.habilidades.join(", ")}</Text>
+                    <Text c="teal.4">Intereses: {usuario.intereses.join(", ")}</Text>
+                    <Text tt="capitalize">Ubicación: {usuario.ubicación}</Text>
+                </Paper>
+            )}
+
+
+
+
+
+
             <article className="feed__posts">
                 {publicaciones.map((publicacion, index) => (
                     <section key={publicacion.p.id} className="feed-post card">

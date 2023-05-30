@@ -316,6 +316,115 @@ def crear_relacion_amistad(tx, correo_emisor, correo_receptor):
     record = result.single()
     return record['u1'], record['u2']
 
+def buscar_amigos_en_comun(tx, correo_electronico):
+    query = '''
+    MATCH (u:Usuario)
+    OPTIONAL MATCH (u)-[:ES_AMIGO]-(commonFriend)-[:ES_AMIGO]-(targetUser:Usuario {correo_electronico: $target_email})
+    WHERE NOT (u)-[:ES_AMIGO]-(targetUser)
+    WITH u, collect(commonFriend.nombre + ' ' + commonFriend.apellido) as commonFriends
+    ORDER BY SIZE(commonFriends) DESC
+    RETURN u, commonFriends
+    '''
+    result = tx.run(query, target_email=correo_electronico)
+    records = result.data()
+
+    amigos_en_comun = []
+    for record in records:
+        usuario = record['u']
+        amigos_comunes = record['commonFriends']
+        
+        amigos_en_comun.append({
+            "usuario": {
+                "id": usuario['id'],
+                "nombre": usuario['nombre'],
+                "apellido": usuario['apellido'],
+                "correo_electronico": usuario['correo_electronico']
+            },
+            "amigos_comunes": amigos_comunes
+        })
+    
+    return amigos_en_comun
+
+def enviar_solicitud_amistad(tx, correo_emisor, correo_receptor):
+    query = '''
+    MATCH (u1:Usuario {correo_electronico: $correo_emisor}), (u2:Usuario {correo_electronico: $correo_receptor})
+    CREATE (u1)-[:ENVIA_SOLICITUD {fecha: datetime()}]->(u2)
+    RETURN u1, u2
+    '''
+    result = tx.run(query, correo_emisor=correo_emisor, correo_receptor=correo_receptor)
+    record = result.single()
+    return record['u1'], record['u2']
+
+def obtener_usuario_y_eventos_asistencia(tx):
+    query = '''
+    MATCH (u:Usuario)-[r:ASISTE]->(e:Evento)
+    RETURN u, r, e
+    '''
+    result = tx.run(query)
+    return [(record['u'], record['r'], record['e']) for record in result]
+
+
+def buscar_usuario_y_eventos_asistencia():
+    with driver.session() as session:
+        resultados = session.execute_read(obtener_usuario_y_eventos_asistencia)
+    resultados_json = []
+    for usuario, asiste, evento in resultados:
+        resultado_json = {
+            "usuario": {
+                "id": usuario['id'],
+                "nombre": usuario['nombre'],
+                "apellido": usuario['apellido'],
+                "correo_electronico": usuario['correo_electronico'],
+                "fecha_nacimiento": usuario['fecha_nacimiento'].isoformat(),
+                "ubicación": usuario['ubicación'],
+                "habilidades": usuario['habilidades'],
+                "intereses": usuario['intereses'],
+                "biografía": usuario['biografía']
+            },
+            "asiste": {
+                "fecha": asiste['fecha'].isoformat(),
+                "confirmacion": asiste['confirmacion']
+            },
+            "evento": {
+                "id": evento['id'],
+                "nombre": evento['nombre'],
+                "descripcion": evento['descripción'],
+                "fecha_inicio": evento['fecha_inicio'].isoformat(),
+                "fecha_fin": evento['fecha_fin'].isoformat(),
+                "ubicacion": evento['ubicación']
+            }
+        }
+        resultados_json.append(resultado_json)
+    return resultados_json
+
+def eliminar_asistencia(tx, correo_electronico, evento_id):
+    query = """
+    MATCH (u:Usuario {correo_electronico: $correo_electronico})-[r:ASISTE_A]->(e:Evento {id: $evento_id})
+    DELETE r
+    RETURN COUNT(r) as relationships_deleted
+    """
+    result = tx.run(query, correo_electronico=correo_electronico, evento_id=evento_id)
+    record = result.single()
+    return record['relationships_deleted'] > 0
+
+
+def crear_asistencia(tx, correo_electronico, evento_id):
+    query = '''
+    MATCH (u:Usuario {correo_electronico: $correo_electronico}), (e:Evento {id: $evento_id})
+    CREATE (u)-[:ASISTE {fecha: datetime(), confirmacion: true}]->(e)
+    RETURN u, e
+    '''
+    result = tx.run(query, correo_electronico=correo_electronico, evento_id=evento_id)
+    return result.single() is not None
+
+def crear_participacion(tx, correo_electronico, grupo_id):
+    query = '''
+    MATCH (u:Usuario {correo_electronico: $correo_electronico}), (g:Grupo {id: $grupo_id})
+    CREATE (u)-[:PARTICIPA {fecha: datetime(), rol: "Participante"}]->(g)
+    RETURN u, g
+    '''
+    result = tx.run(query, correo_electronico=correo_electronico, grupo_id=grupo_id)
+    return result.single() is not None
 # ------------------------------------------------------------------------------------------------
 
 
@@ -423,6 +532,104 @@ def api_eliminar_solicitud_amistad():
         return jsonify({'mensaje': 'Solicitud de amistad eliminada exitosamente'})
     else:
         return jsonify({'mensaje': 'Error al eliminar la solicitud de amistad'})
+
+
+
+@app.route('/api/usuarios/common-friends', methods=['POST'])
+def api_buscar_amigos_en_comun():
+    correo_electronico = request.json['correo_electronico']
+    
+    with driver.session() as session:
+        result = session.write_transaction(buscar_amigos_en_comun, correo_electronico)
+    
+    if result:
+        return jsonify(result)
+    else:
+        return jsonify({'mensaje': 'No se encontraron amigos en común'})
+
+@app.route('/api/usuarios/enviar-solicitud', methods=['POST'])
+def api_enviar_solicitud_amistad():
+    correo_emisor = request.json['correo_emisor']
+    correo_receptor = request.json['correo_receptor']
+
+    with driver.session() as session:
+        result = session.write_transaction(enviar_solicitud_amistad, correo_emisor, correo_receptor)
+
+    if result:
+        return jsonify({'mensaje': 'Solicitud de amistad enviada exitosamente'})
+    else:
+        return jsonify({'mensaje': 'Error al enviar la solicitud de amistad'})
+
+
+@app.route('/api/usuarios/eventos/asistencia', methods=['GET'])
+def api_obtener_asistencia_eventos():
+    try:
+        resultados = buscar_usuario_y_eventos_asistencia()
+        return jsonify(resultados)
+    except Exception as e:
+        return jsonify({'mensaje': 'Error al obtener la asistencia a eventos: {}'.format(e)})
+
+
+@app.route('/api/usuarios/eventos/asistencia/eliminar', methods=['POST'])
+def api_eliminar_asistencia():
+    correo = request.json['correo']
+    evento_id = request.json['evento_id']
+
+    with driver.session() as session:
+        eliminado = session.write_transaction(eliminar_asistencia, correo, evento_id)
+
+    if eliminado:
+        return jsonify({'mensaje': 'La asistencia se eliminó correctamente.'})
+    else:
+        return jsonify({'mensaje': 'Error al eliminar la asistencia. Asegúrate de que los datos sean correctos.'})
+
+@app.route('/api/usuarios/eventos/asistencia/crear', methods=['POST'])
+def api_crear_asistencia():
+    correo = request.json['correo']
+    evento_id = request.json['evento_id']
+
+    with driver.session() as session:
+        creado = session.write_transaction(crear_asistencia, correo, evento_id)
+
+    if creado:
+        return jsonify({'mensaje': 'La asistencia fue creada correctamente.'})
+    else:
+        return jsonify({'mensaje': 'Error al crear la asistencia. Asegúrate de que los datos sean correctos.'})
+
+@app.route('/api/obtener_grupos_usuario', methods=['POST'])
+def api_obtener_grupos_usuario():
+    data = request.json
+    correo = data.get('correo')
+    with driver.session() as session:
+        grupos = session.write_transaction(obtener_grupos_usuario, correo)
+    grupos_json = []
+    for grupo in grupos:
+        grupo_json = {
+            "id": grupo['id'],
+            "nombre": grupo['nombre'],
+            "descripcion": grupo['descripcion'],
+            "fecha_creacion": grupo['fecha_creacion'].isoformat(),
+            "privacidad": grupo['privacidad']
+        }
+        grupos_json.append(grupo_json)
+    return jsonify(grupos_json)
+
+def obtener_grupos_usuario(tx, correo):
+    result = tx.run("MATCH (u:Usuario {correo_electronico:$correo})-[r:PARTICIPA]->(e:Grupo) RETURN e", correo=correo)
+    return [record["e"] for record in result]
+
+@app.route('/api/participaciones/crear', methods=['POST'])
+def api_crear_participacion():
+    correo_electronico = request.json['correo_electronico']
+    grupo_id = request.json['grupo_id']
+
+    with driver.session() as session:
+        result = session.write_transaction(crear_participacion, correo_electronico, grupo_id)
+
+    if result:
+        return jsonify({'mensaje': 'Participación creada exitosamente'})
+    else:
+        return jsonify({'mensaje': 'Error al crear la participación'})
 
 if __name__ == '__main__':
     app.run(debug=True)

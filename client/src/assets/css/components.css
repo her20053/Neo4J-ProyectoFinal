@@ -28,3 +28,23 @@
   bottom: 0;
   border-radius: 50%;
 }
+
+
+.area_amigos_recomendados_usuario {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.area_amigos_recomendados_amigos {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.paper_amigos_recomendados {
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
