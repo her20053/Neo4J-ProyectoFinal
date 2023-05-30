@@ -5,13 +5,12 @@ import AsideAppComponent from "./Aside";
 import EventosComponent from "./Eventos";
 import GruposComponent from "./Grupos";
 
-export default function WrapperAppComponent() {
-    const [correoElectronico, setCorreoElectronico] = useState("andres.iniesta@email.com");
+export default function WrapperAppComponent({ correoElectronico }) {
     const [activeMenuItem, setActiveMenuItem] = useState("POSTS");
 
     return (
         <div className="wrapper">
-            <HeaderAppComponent correoElectronico={correoElectronico} onMenuItemClick={setActiveMenuItem} />
+            <HeaderAppComponent correo_electronico_param={correoElectronico} onMenuItemClick={setActiveMenuItem} />
             {
                 activeMenuItem == "POSTS"
                     ?
@@ -21,7 +20,7 @@ export default function WrapperAppComponent() {
                         ?
                         <EventosComponent correoElectronico={correoElectronico} />
                         :
-                        <><GruposComponent correoElectronico={correoElectronico} /></>
+                        <GruposComponent correoElectronico={correoElectronico} />
             }
             <AsideAppComponent correoElectronico={correoElectronico} />
         </div>

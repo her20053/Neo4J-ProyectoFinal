@@ -1,12 +1,40 @@
 import FreshookLogo from '../assets/images/freshook_logo.png';
 import { useState } from 'react';
 
-export default function HeaderAppComponent({ correo_electronico, onMenuItemClick }) {
+export default function HeaderAppComponent({ correo_electronico_param, onMenuItemClick }) {
     const [activeItem, setActiveItem] = useState("POSTS");
 
     const handleMenuItemClick = (item) => {
         setActiveItem(item);
         onMenuItemClick(item);
+    };
+
+    const handleLogoutClick = async () => {
+        try {
+            const response = await fetch('http://localhost:5000/api/usuarios/eliminar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    correo_electronico: correo_electronico_param
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log(correo_electronico_param);
+            console.log(data);
+            // Aquí puedes manejar la respuesta. Por ejemplo, puedes redirigir al usuario a la página de login.
+            window.location.reload();
+
+        } catch (error) {
+            console.error('Error:', error);
+            // Aquí puedes manejar el error. Por ejemplo, puedes mostrar un mensaje al usuario.
+        }
     };
 
     return (
@@ -32,7 +60,7 @@ export default function HeaderAppComponent({ correo_electronico, onMenuItemClick
                         </li>
                     </ul>
                 </nav>
-                <a className="sidebar__logout menu-button">
+                <a className="sidebar__logout menu-button" onClick={handleLogoutClick}>
                     <i className="fa fa-sign-out-alt"></i>
                 </a>
             </div>

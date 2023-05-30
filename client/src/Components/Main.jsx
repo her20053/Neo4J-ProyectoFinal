@@ -215,7 +215,7 @@ export default function MainAppComponent({ correoElectronico }) {
                     <Text c="dimmed">{usuario.biografía}</Text>
                     <Text>Mi fecha de nacimiento es</Text>
                     <Text c="dimmed">{usuario.fecha_nacimiento}</Text>
-                    <Text c="blue">Habilidades: {usuario.habilidades.join(", ")}</Text>
+                    <Text c="blue">Habilidades: {usuario?.habilidades.join(", ")}</Text>
                     <Text c="teal.4">Intereses: {usuario.intereses.join(", ")}</Text>
                     <Text tt="capitalize">Ubicación: {usuario.ubicación}</Text>
                 </Paper>

@@ -425,6 +425,46 @@ def crear_participacion(tx, correo_electronico, grupo_id):
     '''
     result = tx.run(query, correo_electronico=correo_electronico, grupo_id=grupo_id)
     return result.single() is not None
+
+
+def crear_usuario(tx, profesion, id, nombre, apellido, correo_electronico, fecha_nacimiento, ubicacion, habilidades, intereses, biografia):
+    query = f'''
+    CREATE (u:Usuario:{profesion} {{
+        id: {id},
+        nombre: '{nombre}',
+        apellido: '{apellido}',
+        correo_electronico: '{correo_electronico}',
+        fecha_nacimiento: date('{fecha_nacimiento}'),
+        ubicación: '{ubicacion}',
+        habilidades: {habilidades},
+        intereses: {intereses},
+        biografía: '{biografia}'
+    }})
+    '''
+    tx.run(query)
+
+def api_crear_usuario(profesion, nombre, apellido, correo_electronico, fecha_nacimiento, ubicacion, habilidades, intereses, biografia):
+    id = randint(1, 100000)  # Genera un id aleatorio
+    habilidades = habilidades.split(',')  # Convierte el string de habilidades en una lista
+    intereses = intereses.split(',')  # Convierte el string de intereses en una lista
+
+    with driver.session() as session:
+        session.write_transaction(crear_usuario, profesion, id, nombre, apellido, correo_electronico, fecha_nacimiento, ubicacion, habilidades, intereses, biografia)
+
+    return {"mensaje": "Usuario creado exitosamente"}
+
+
+def eliminar_usuario_por_correo(tx, correo_electronico):
+    query = '''
+    MATCH (u:Usuario {correo_electronico: $correo_electronico})
+    DETACH DELETE u
+    '''
+    tx.run(query, correo_electronico=correo_electronico)
+
+def eliminar_usuario(correo_electronico):
+    with driver.session() as session:
+        session.write_transaction(eliminar_usuario_por_correo, correo_electronico)
+
 # ------------------------------------------------------------------------------------------------
 
 
@@ -630,6 +670,29 @@ def api_crear_participacion():
         return jsonify({'mensaje': 'Participación creada exitosamente'})
     else:
         return jsonify({'mensaje': 'Error al crear la participación'})
+
+@app.route('/api/usuarios/crear', methods=['POST'])
+def api_crear():
+    profesion = request.json['profesion']
+    nombre = request.json['nombre']
+    apellido = request.json['apellido']
+    correo_electronico = request.json['correo_electronico']
+    fecha_nacimiento = request.json['fecha_nacimiento']
+    ubicacion = request.json['ubicacion']
+    habilidades = request.json['habilidades']
+    intereses = request.json['intereses']
+    biografia = request.json['biografia']
+
+    resultado = api_crear_usuario(profesion, nombre, apellido, correo_electronico, fecha_nacimiento, ubicacion, habilidades, intereses, biografia)
+    return jsonify(resultado)
+
+
+@app.route('/api/usuarios/eliminar', methods=['POST'])
+def api_eliminar_usuario_por_correo():
+    correo_electronico = request.json['correo_electronico']
+    eliminar_usuario(correo_electronico)
+    return jsonify({"mensaje": "Usuario eliminado con éxito"})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
