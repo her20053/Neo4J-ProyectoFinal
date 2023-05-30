@@ -178,6 +178,28 @@ export default function MainAppComponent({ correoElectronico }) {
         }
     };
 
+    function eliminarUbicacion() {
+        fetch('http://localhost:5000/api/usuarios/eliminar_ubicacion', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ correo_electronico: correoElectronico })
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data); // Manejar la respuesta del servidor si es necesario
+                window.location.reload(); // Recargar la página
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+
+    const handleClick = () => {
+        eliminarUbicacion();
+    };
+
     return (
         <main className="fb-section feed">
             <div className="feed__post-creation card card--strait">
@@ -217,7 +239,9 @@ export default function MainAppComponent({ correoElectronico }) {
                     <Text c="dimmed">{usuario.fecha_nacimiento}</Text>
                     <Text c="blue">Habilidades: {usuario?.habilidades.join(", ")}</Text>
                     <Text c="teal.4">Intereses: {usuario.intereses.join(", ")}</Text>
-                    <Text tt="capitalize">Ubicación: {usuario.ubicación}</Text>
+                    <Text tt="capitalize">Ubicación: {usuario?.ubicación} <Button color="red" compact uppercase onClick={handleClick}>
+                        X
+                    </Button></Text>
                 </Paper>
             )}
 

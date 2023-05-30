@@ -464,6 +464,20 @@ def eliminar_usuario_por_correo(tx, correo_electronico):
 def eliminar_usuario(correo_electronico):
     with driver.session() as session:
         session.write_transaction(eliminar_usuario_por_correo, correo_electronico)
+        
+def eliminar_ubicacion_por_correo(tx, correo_electronico):
+    query = '''
+    MATCH (u:Usuario {correo_electronico: $correo_electronico})
+    SET u.ubicación = NULL
+    RETURN u
+    '''
+    result = tx.run(query, correo_electronico=correo_electronico)
+    return result.single()
+
+def eliminar_ubicacion(correo_electronico):
+    with driver.session() as session:
+        session.write_transaction(eliminar_ubicacion_por_correo, correo_electronico)
+
 
 # ------------------------------------------------------------------------------------------------
 
@@ -693,6 +707,12 @@ def api_eliminar_usuario_por_correo():
     eliminar_usuario(correo_electronico)
     return jsonify({"mensaje": "Usuario eliminado con éxito"})
 
+
+@app.route('/api/usuarios/eliminar_ubicacion', methods=['POST'])
+def api_eliminar_ubicacion_por_correo():
+    correo_electronico = request.json['correo_electronico']
+    eliminar_ubicacion(correo_electronico)
+    return jsonify({"mensaje": "Ubicacion eliminada con éxito"})
 
 if __name__ == '__main__':
     app.run(debug=True)
